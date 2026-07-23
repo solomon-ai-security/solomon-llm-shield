@@ -1,0 +1,65 @@
+test_input_jailbreak_attempt (__main__.TestLLMInputGuard.test_input_jailbreak_attempt)
+Тест: Обнаружение jailbreak-попытки (DAN). ... ok
+test_input_prompt_injection (__main__.TestLLMInputGuard.test_input_prompt_injection)
+Тест: Обнаружение классической промпт-инъекции во входном промпте. ... ok
+test_input_python_insecure_hash (__main__.TestLLMInputGuard.test_input_python_insecure_hash)
+Тест: Обнаружение слабого хеширования (MD5). ... ok
+test_input_python_insecure_request (__main__.TestLLMInputGuard.test_input_python_insecure_request)
+Тест: Обнаружение отключенной проверки сертификата. ... ok
+test_input_safe_prompt_passes (__main__.TestLLMInputGuard.test_input_safe_prompt_passes)
+Тест: Безопасный промпт проходит без блокировки. ... ok
+test_input_secret_exposure_in_prompt (__main__.TestLLMInputGuard.test_input_secret_exposure_in_prompt)
+Тест: Пользователь случайно вставляет свой API-ключ в запрос. ... ok
+test_input_shell_injection (__main__.TestLLMInputGuard.test_input_shell_injection)
+Тест: Обнаружение Bash/Shell инъекции в промпте. ... ok
+test_input_sql_injection (__main__.TestLLMInputGuard.test_input_sql_injection)
+Тест: Обнаружение SQL инъекции в промпте. ... ok
+test_input_trojan_source (__main__.TestLLMInputGuard.test_input_trojan_source)
+Тест: Обнаружение Trojan Source (двунаправленные символы). ... ok
+test_input_user_provides_malicious_code (__main__.TestLLMInputGuard.test_input_user_provides_malicious_code)
+Тест: Пользователь отправляет вредоносный Python-код в промпте. ... ok
+test_output_api_keys (__main__.TestLLMOutputGuard.test_output_api_keys)
+Тест: Обнаружение ключей OpenAI, Anthropic, SSH. ... ok
+test_output_competitor_mention_block (__main__.TestLLMOutputGuard.test_output_competitor_mention_block)
+Тест: Модель упоминает конкурента, срабатывает BanCompetitors. ... ok
+test_output_destructive_command_in_json (__main__.TestLLMOutputGuard.test_output_destructive_command_in_json)
+Тест: Модель возвращает JSON с инъекцией bash-команды. ... ok
+test_output_json_repair (__main__.TestLLMOutputGuard.test_output_json_repair)
+Тест: Попытка починить JSON. ... ok
+test_output_os_commands (__main__.TestLLMOutputGuard.test_output_os_commands)
+Тест: Обнаружение опасных OS команд (sudo, nmap). ... ok
+test_output_pii_masking (__main__.TestLLMOutputGuard.test_output_pii_masking)
+Тест: Модель генерирует PII (номер кредитки), система должна его замаскировать. ... ok
+test_output_ransomware_keywords (__main__.TestLLMOutputGuard.test_output_ransomware_keywords)
+Тест: Модель генерирует текст с признаками вымогательства/шифровальщика. ... ok
+test_output_reading_time (__main__.TestLLMOutputGuard.test_output_reading_time)
+Тест: Превышение времени чтения. ... ok
+test_output_refusal (__main__.TestLLMOutputGuard.test_output_refusal)
+Тест: Обнаружение отказа модели. ... ok
+test_output_reverse_shell (__main__.TestLLMOutputGuard.test_output_reverse_shell)
+Тест: Модель выдает reverse shell payload. ... ok
+test_output_safe_generation (__main__.TestLLMOutputGuard.test_output_safe_generation)
+Тест: Корректный и безопасный ответ модели пропускается без изменений. ... ok
+test_output_self_harm (__main__.TestLLMOutputGuard.test_output_self_harm)
+Тест: Модель генерирует инструкции по причинению вреда себе. ... ok
+test_output_suspicious_url (__main__.TestLLMOutputGuard.test_output_suspicious_url)
+Тест: Модель выдает подозрительный URL (например, метаданные AWS). ... ok
+test_output_token_and_prompt_leak (__main__.TestLLMOutputGuard.test_output_token_and_prompt_leak)
+Тест: Модель утечет JWT-токен и содержимое системного промпта. ... ok
+test_cross_context_jailbreak_and_leak (__main__.TestCrossContextPipeline.test_cross_context_jailbreak_and_leak)
+Тест: Пользователь пытается снять ограничения, а модель утечет токен. ... ok
+test_async_protect_allow (__main__.TestLLMOutputGuardAsyncShield.test_async_protect_allow)
+Тест: Безопасный текст проходит асинхронную защиту. ... ok
+test_async_protect_block_canary (__main__.TestLLMOutputGuardAsyncShield.test_async_protect_block_canary)
+Тест: Утечка канарейки блокируется. ... ok
+test_async_protect_pii_transform (__main__.TestLLMOutputGuardAsyncShield.test_async_protect_pii_transform)
+Тест: PII маскируется HMAC-хешем. ... ok
+test_async_protect_stream (__main__.TestLLMOutputGuardAsyncShield.test_async_protect_stream)
+Тест: Асинхронный стриминг работает и перехватывает нарушения. ... ok
+test_load_policy_from_yaml (__main__.TestLLMGuardConfig.test_load_policy_from_yaml)
+Тест: Загрузка кастомной политики из YAML. ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.111s
+
+OK

@@ -1795,6 +1795,59 @@ class LLMOutputGuard(LLMGuard):
         defaults.update(kwargs)
         super().__init__(**defaults)
 
+    def guard(self, text, *, policy=None, raise_on_block=None, extra=None):
+        """
+        Overrides base guard to combine chain-based scanners (BanCompetitors, etc.)
+        with the regex-based scanners.
+        """
+        import time as _time
+        active_policy = policy or self._policy
+        start = _time.perf_counter()
+        
+        # 1. Regex scan
+        try:
+            scan = LLMGuard.scan_and_redact(text, active_policy)
+        except Exception as exc:
+            raise self.GuardError(guard_name="output_guard", message=str(exc), original_error=exc) from exc
+
+        # 2. Chain scan (runs Competitors, PII masking, JSON repair, etc)
+        sanitized, valid, scores, trail = self.scan(prompt="N/A", output=scan.safe_output or text)
+
+        # Merge results
+        if not valid:
+            chain_reasons = [f"Output violated {k}" for k, v in scores.items() if v >= 1.0]
+            if not chain_reasons:
+                chain_reasons = ["Output blocked by chain scanner"]
+            
+            combined_reasons = list(scan.reasons) + chain_reasons
+            max_score = 1.0
+            safe_out = None
+        else:
+            combined_reasons = scan.reasons
+            max_score = scan.score
+            safe_out = sanitized if sanitized != text else (scan.safe_output or text)
+
+        action = active_policy.action_for_score(max_score, self.GuardType.OUTPUT)
+        decision = self.GuardDecision(
+            allowed=action != self.PolicyAction.BLOCK,
+            score=round(max_score, 4),
+            reasons=combined_reasons,
+            safe_output=safe_out,
+            warned=action == self.PolicyAction.WARN,
+            scan_results=[scan],
+            action=action,
+        )
+
+        elapsed_ms = (_time.perf_counter() - start) * 1000
+        self.log_decision(decision, policy=active_policy, duration_ms=elapsed_ms, extra=extra)
+
+        # Check raise
+        should_raise = raise_on_block if raise_on_block is not None else active_policy.raise_on_block
+        if not decision.allowed and should_raise:
+            raise self.OutputBlockedError(reasons=decision.reasons, score=decision.score, output_snippet=text[:120], decision=decision, policy_name=active_policy.name)
+            
+        return decision
+
 
 # ===========================================================================
 # MODULE-LEVEL CONVENIENCE FUNCTION

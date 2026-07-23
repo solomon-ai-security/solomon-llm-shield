@@ -1415,11 +1415,11 @@ _SQL_CODE_BLOCK_RE = re.compile(r"```(?:sql|SQL)?\n(.*?)```", re.DOTALL)
 _INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 
 _PROMPT_INJECTION_PATTERNS = [
-    (re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE), "Possible prompt injection: 'ignore previous instructions'"),
-    (re.compile(r"disregard\s+(all\s+)?prior\s+(instructions|prompts)", re.IGNORECASE), "Possible prompt injection: 'disregard prior instructions'"),
+    (re.compile(r"(?:ignore|disregard)\s+(?:all\s+)?(?:previous\s+|prior\s+)?(?:instructions|prompts|directions)", re.IGNORECASE), "Possible prompt injection: instruction override attempt"),
     (re.compile(r"you\s+are\s+now\s+(?:a|an)\s+(?:different|new|jailbroken)", re.IGNORECASE), "Possible prompt injection: identity override attempt"),
     (re.compile(r"(?:reveal|show|print|output)\s+(?:your|the)\s+(?:system|hidden)\s+prompt", re.IGNORECASE), "Possible prompt injection: system prompt extraction attempt"),
     (re.compile(r"\[SYSTEM\]|\[ADMIN\]|\[INST\]|\[/INST\]", re.IGNORECASE), "Possible prompt injection: special token injection"),
+    (re.compile(r"\bdrop\s+(?:the\s+)?(?:database|table)\b", re.IGNORECASE), "Destructive database operation requested in plain text"),
 ]
 
 _SUSPICIOUS_URL_RE = re.compile(r"https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|169\.254\.169\.254|\[::1\])", re.IGNORECASE)
