@@ -112,6 +112,56 @@ final_response = decision.safe_output or response if decision.allowed else "Sorr
 ```
 
 
+### 4. Streaming — Потоковая защита (AsyncRealtimeShield)
+
+Для защиты ответов LLM в реальном времени используется `AsyncRealtimeShield` с методом `protect_stream`. Он буферизует чанки, проверяет каждый фрагмент потока и мгновенно прерывает генерацию при обнаружении нарушения (утечка канареек, PII, инъекции).
+
+```python
+import asyncio
+from solomon_llm_shield import LLMGuard
+from solomon_llm_shield.async_shield import ShieldConfig
+
+# Конфигурация shield
+shield_config = ShieldConfig(
+    secret_key="your-secret-key",
+    tpm_limit=15000,
+    stream_flush_timeout=0.5,   # макс. сек буферизации перед проверкой
+    max_context_length=100000,  # лимит на длину всего потока
+    canary_patterns=["SECRET_CANARY_123"]
+)
+
+guard = LLMGuard(shield_config=shield_config)
+
+# Пример: имитация стриминга от LLM
+async def llm_stream():
+    """Замените на реальный вызов OpenAI/Anthropic с stream=True."""
+    chunks = [
+        "Here is the answer: ",
+        "The secret code is ",
+        "SECRET_CANARY_123",  # ← будет перехвачено shield
+        " — do not share it."
+    ]
+    for chunk in chunks:
+        yield chunk
+        await asyncio.sleep(0.1)  # имитация задержки генерации
+
+async def main():
+    async with guard:
+        stream = guard.protect_stream(llm_stream())
+        async for safe_chunk in stream:
+            print(safe_chunk, end="", flush=True)
+
+asyncio.run(main())
+```
+
+**Что происходит при стриминге:**
+1. Каждый чанк попадает в буфер и проверяется на rate limiting (TokenBucket) и длину.
+2. По таймеру `stream_flush_timeout` или при встрече `\n` буфер пропускается через полный пайплайн `protect()` — PII-маскировка, инъекции, канарейки.
+3. Если нарушение обнаружено — поток прерывается сообщением `[SHIELD INTERVENTION: ...]` и дальнейшая генерация прекращается.
+4. Если всё чисто — очищенный чанк yield-ится вызывающему коду.
+
+---
+
 ## ⚙️ Загрузка Конфигураций Политики (YAML)
 
 Библиотека поддерживает гибкую настройку пороговых значений через конфигурационные файлы YAML:

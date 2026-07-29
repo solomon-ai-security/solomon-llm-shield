@@ -496,6 +496,35 @@ class LLMGuard:
             ]
 
     # ═══════════════════════════════════════════════════════════════════
+    # HELPERS
+    # ═══════════════════════════════════════════════════════════════════
+
+    @staticmethod
+    def _normalize_text(content: Any) -> str:
+        """
+        Normalize input to a plain string.
+        Handles OpenAI multimodal format (lists of content-part dicts).
+        """
+        if content is None:
+            return ""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            texts = []
+            for part in content:
+                if isinstance(part, str):
+                    texts.append(part)
+                elif isinstance(part, dict):
+                    if part.get("type") == "text" and "text" in part:
+                        texts.append(str(part["text"]))
+                    elif "content" in part:
+                        texts.append(str(part["content"]))
+            return "\n".join(texts)
+        if isinstance(content, dict):
+            return str(content.get("text", content.get("content", "")))
+        return str(content)
+
+    # ═══════════════════════════════════════════════════════════════════
     # API 1: CHAIN-BASED SCAN 
     # ═══════════════════════════════════════════════════════════════════
 
@@ -505,6 +534,8 @@ class LLMGuard:
 
     def scan(self, prompt: str, output: str) -> Tuple[str, bool, Dict[str, float], List["LLMGuard.AuditEntry"]]:
         self._audit_trail.clear()
+        prompt = self._normalize_text(prompt)
+        output = self._normalize_text(output)
         sanitized = output
         risk_scores: Dict[str, float] = {}
         is_valid_flags: Dict[str, bool] = {}
@@ -830,6 +861,7 @@ class LLMGuard:
 
     def scan_ast(self, text: str) -> List[_Issue]:
         """AST-based security analysis of LLM output text."""
+        text = self._normalize_text(text)
         self.results = []
         self.skipped = []
         self.metrics = _Metrics()
@@ -1196,6 +1228,7 @@ class LLMGuard:
         active_policy = policy or cls.get_default_policy()
         if not active_policy.is_guard_enabled(cls.GuardType.OUTPUT):
             return cls.ScanResult(allowed=True, score=0.0, reasons=[], guard_type=cls.GuardType.OUTPUT, metadata={"skipped": True, "reason": "output_guard disabled in policy"})
+        text = cls._normalize_text(text)
         if not text or not text.strip():
             return cls.ScanResult(allowed=True, score=0.0, reasons=[], guard_type=cls.GuardType.OUTPUT, metadata={"skipped": True, "reason": "empty output"})
         block_threshold = active_policy.effective_block_threshold(cls.GuardType.OUTPUT)
@@ -1219,6 +1252,8 @@ class LLMGuard:
     @classmethod
     def scan_and_redact(cls, text, policy=None, *, short_circuit=False):
         active_policy = policy or cls.get_default_policy()
+        # Must normalize here so redact_spans are applied to a string, not a list
+        text = cls._normalize_text(text)
         base = cls.scan_output(text, active_policy, short_circuit=short_circuit)
         if base.metadata.get("skipped"):
             return cls.ScanResult(allowed=base.allowed, score=base.score, reasons=base.reasons, safe_output=text, guard_type=cls.GuardType.OUTPUT, metadata=base.metadata)
@@ -1232,6 +1267,7 @@ class LLMGuard:
 
     @classmethod
     def redact_output(cls, text, policy=None):
+        text = cls._normalize_text(text)
         result = cls.scan_and_redact(text, policy, short_circuit=False)
         return (result.safe_output or text), result.reasons
 
@@ -1240,6 +1276,7 @@ class LLMGuard:
         import time as _time
         active_policy = policy or cls.get_default_policy()
         start = _time.perf_counter()
+        text = cls._normalize_text(text)
         try:
             scan = cls.scan_and_redact(text, active_policy)
         except Exception as exc:
@@ -1718,6 +1755,7 @@ class LLMInputGuard(LLMGuard):
 
         Returns a GuardDecision with combined results.
         """
+        text = self._normalize_text(text)
         # AST scan for prompt injection and code analysis
         ast_issues = self.scan_ast(text)
 
@@ -1803,7 +1841,7 @@ class LLMOutputGuard(LLMGuard):
         import time as _time
         active_policy = policy or self._policy
         start = _time.perf_counter()
-        
+        text = self._normalize_text(text)
         # 1. Regex scan
         try:
             scan = LLMGuard.scan_and_redact(text, active_policy)

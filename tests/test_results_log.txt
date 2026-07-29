@@ -60,6 +60,6 @@ test_load_policy_from_yaml (__main__.TestLLMGuardConfig.test_load_policy_from_ya
 Тест: Загрузка кастомной политики из YAML. ... ok
 
 ----------------------------------------------------------------------
-Ran 30 tests in 0.111s
+Ran 30 tests in 0.082s
 
 OK
